@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panneau du Créateur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #f4f4f4;
+        }
+        header button {
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80vh;
+        }
+        .username {
+            font-weight: bold;
+            color: #007BFF;
+        }
+        #creatorPanel {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button onclick="openModalLogin()">Se connecter</button>
+        <button onclick="openModalRegister()">Créer un compte</button>
+        <button id="logoutBtn" onclick="logout()" style="display: none;">Se déconnecter</button>
+        <button id="creatorPanelBtn" onclick="showCreatorPanel()" style="display: none;">Panneau du Créateur</button>
+    </header>
+    <main>
+        <h1>Bonjour, <span class="username">Utilisateur</span> !</h1>
+    </main>
+
+    <!-- Panneau du Créateur -->
+    <div id="creatorPanel">
+        <h2>Gestion des comptes</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom d'utilisateur</th>
+                    <th>Mot de passe</th>
+                    <th>Rôle</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="accountsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Initialisation des comptes
+        let accounts = [];
+
+        // Charger les comptes depuis localStorage
+        function loadAccounts() {
+            const savedAccounts = localStorage.getItem("accounts");
+            if (savedAccounts) {
+                accounts = JSON.parse(savedAccounts);
+            } else {
+                accounts = [{ username: "Admin", password: "819737", role: "créateur" }];
+            }
+        }
+
+        // Sauvegarder les comptes dans localStorage
+        function saveAccounts() {
+            localStorage.setItem("accounts", JSON.stringify(accounts));
+        }
+
+        // Charger les comptes au démarrage
+        loadAccounts();
+
+        let currentUser = null;
+
+        // Connexion
+        function openModalLogin() {
+            const username = prompt("Nom d'utilisateur :");
+            const password = prompt("Mot de passe :");
+
+            const account = accounts.find(acc => acc.username === username && acc.password === password);
+            if (account) {
+                currentUser = account;
+                alert(`Bienvenue, ${currentUser.username} !`);
+                document.querySelector(".username").textContent = currentUser.username;
+
+                // Afficher les boutons selon le rôle
+                document.getElementById("logoutBtn").style.display = "inline-block";
+                if (currentUser.role === "créateur") {
+                    document.getElementById("creatorPanelBtn").style.display = "inline-block";
+                }
+            } else {
+                alert("Identifiants incorrects.");
+            }
+        }
+
+        // Déconnexion
+        function logout() {
+            currentUser = null;
+            document.querySelector(".username").textContent = "Utilisateur";
+            document.getElementById("logoutBtn").style.display = "none";
+            document.getElementById("creatorPanelBtn").style.display = "none";
+            document.getElementById("creatorPanel").style.display = "none";
+            alert("Vous êtes déconnecté.");
+        }
+
+        // Créer un compte
+        function openModalRegister() {
+            const username = prompt("Entrez un nom d'utilisateur :");
+            const password = prompt("Entrez un mot de passe :");
+
+            if (accounts.some(acc => acc.username === username)) {
+                alert("Ce nom d'utilisateur existe déjà.");
+                return;
+            }
+
+            accounts.push({ username, password, role: "utilisateur" });
+            saveAccounts();
+            alert("Compte créé avec succès !");
+        }
+
+        // Afficher le panneau du créateur
+        function showCreatorPanel() {
+            if (!currentUser || currentUser.role !== "créateur") {
+                alert("Accès refusé.");
+                return;
+            }
+
+            const table = document.getElementById("accountsTable");
+            table.innerHTML = accounts.map((acc, index) =>
+                `<tr>
+                    <td>${acc.username}</td>
+                    <td>${acc.password}</td>
+                    <td>${acc.role}</td>
+                    <td>
+                        ${acc.role !== "créateur" ? `<button onclick="deleteAccount(${index})">Supprimer</button>` : ""}
+                    </td>
+                </tr>`
+            ).join("");
+            document.getElementById("creatorPanel").style.display = "block";
+        }
+
+        // Supprimer un compte
+        function deleteAccount(index) {
+            if (!currentUser || currentUser.role !== "créateur") {
+                alert("Accès refusé.");
+                return;
+            }
+
+            accounts.splice(index, 1);
+            saveAccounts();
+            showCreatorPanel();
+            alert("Compte supprimé.");
+        }
+    </script>
+</body>
+</html>
